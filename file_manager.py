@@ -20,19 +20,25 @@ class FileManagerApp:
         self.main_container = ctk.CTkFrame(self.app)
         self.main_container.pack(fill="both", expand=True, padx=10, pady=5)
 
-        # tab style view
-        self.tabview = ctk.CTkTabview(self.main_container)
-        self.tabview.pack(fill="both", expand=True, padx=10, pady=5)
+        custom_font = ("Yu Gothic UI", 18, 'normal')
 
-        self.tab_organizer = self.tabview.add("File Organizer")
-        self.tab_monitor = self.tabview.add("File monitor")
-        self.tab_analysis = self.tabview.add("Disk Space Analysis")
-        self.tab_cleanup = self.tabview.add("File cleanup")
+        # tab style view
+        self.tabview = ctk.CTkTabview(self.main_container, corner_radius=25)
+        self.tabview.pack(fill="both", expand=True, padx=10, pady=5)
+        self.tabview._segmented_button.configure(font=custom_font)
+
+        self.tab_organizer = self.tabview.add(" Organizer ")
+        self.tab_monitor = self.tabview.add(" Monitor ")
+        self.tab_analysis = self.tabview.add(" Disk Analysis ")
+        self.tab_temp_cleanup = self.tabview.add(" Temp cleanup ")
+        self.tab_cleanup = self.tabview.add(" File cleanup ")
 
         self._setup_organizer_tab()
         self._setup_monitor_tab()
         self._setup_analysis_tab()
         self._setup_cleanup_tab()
+        self._setup_temp_cleanup_tab()
+
 
     def _setup_organizer_tab(self):
         # here you enter dir path
@@ -59,6 +65,7 @@ class FileManagerApp:
         self.org_log = ctk.CTkTextbox(log_frame, height=300)
         self.org_log.pack(fill="both", expand=True, padx=5, pady=5)
 
+
     def _setup_monitor_tab(self):
         control_frame = ctk.CTkFrame(self.tab_monitor)
         control_frame.pack(fill="x", padx=10, pady=5)
@@ -77,6 +84,7 @@ class FileManagerApp:
         self.monitor_log = ctk.CTkTextbox(log_frame, height=400)
         self.monitor_log.pack(fill="both", expand=True, padx=5, pady=5)
 
+
     def _setup_analysis_tab(self):
         control_frame = ctk.CTkFrame(self.tab_analysis)
         control_frame.pack(fill="x", padx=10, pady=5)
@@ -90,6 +98,7 @@ class FileManagerApp:
         self.analysis_frame = ctk.CTkScrollableFrame(self.tab_analysis)
         self.analysis_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
+
     def _setup_cleanup_tab(self):
         options_frame = ctk.CTkFrame(self.tab_cleanup)
         options_frame.pack(fill="x", padx=10, pady=5)
@@ -102,11 +111,8 @@ class FileManagerApp:
         self.cleanup_options = ctk.CTkFrame(self.tab_cleanup)
         self.cleanup_options.pack(fill="x", padx=10, pady=5)
 
-        self.temp_files_var = tk.BooleanVar(value=True)
         self.empty_folders_var = tk.BooleanVar(value=True)
         self.old_files_var = tk.BooleanVar(value=True)
-
-        ctk.CTkCheckBox(self.cleanup_options, text="Remove temporary files", variable=self.temp_files_var).pack(anchor="w")
 
         ctk.CTkCheckBox(self.cleanup_options, text="Remove empty folders", variable=self.empty_folders_var).pack(anchor="w")
 
@@ -116,6 +122,25 @@ class FileManagerApp:
 
         self.cleanup_results = ctk.CTkTextbox(self.tab_cleanup, height=200)
         self.cleanup_results.pack(fill="both", expand=True, padx=10, pady=5)
+
+
+    def _setup_temp_cleanup_tab(self):
+        options_frame = ctk.CTkFrame(self.tab_temp_cleanup)
+        options_frame.pack(fill="x", padx=10, pady=5)
+
+        ctk.CTkLabel(options_frame, text="Directory to clean:").pack(side="left", padx=5)
+        self.cleanup_entry = ctk.CTkEntry(options_frame, width=400)
+        self.cleanup_entry.pack(side="left", padx=5)
+
+        # all cleanup options
+        self.cleanup_options = ctk.CTkFrame(self.tab_temp_cleanup)
+        self.cleanup_options.pack(fill="x", padx=10, pady=5)
+
+        ctk.CTkButton(self.cleanup_options, text="Start cleanup process", command=self._perform_temp_cleanup).pack(pady=10)
+
+        self.cleanup_results = ctk.CTkTextbox(self.tab_temp_cleanup, height=200)
+        self.cleanup_results.pack(fill="both", expand=True, padx=10, pady=5)
+
 
     def _organize_files(self):
         self.org_log.insert(tk.END, "Sorting...\n")
@@ -276,8 +301,8 @@ class FileManagerApp:
             status_label.configure(text=f"Error: {e}", text_color="red")
 
 
-    def _perform_cleanup(self):
-        username = self.cleanup_entry.get()  # Assume there's an entry widget for the username
+    def _perform_temp_cleanup(self):
+        username = self.cleanup_entry.get()
         if not username:
             self.cleanup_results.insert("end", "Please enter a valid username\n")
             return
@@ -313,13 +338,31 @@ class FileManagerApp:
                         except Exception as e:
                             self.cleanup_results.insert("end", f"Failed to remove {file_path}: {str(e)}\n")
 
+        self.cleanup_results.insert("end", 
+                            f"\nCleanup completed:\n"
+                            f"- Removed {removed_count} items\n"
+                            f"Saved {saved_space / (1024*1024):.2f} MB of space\n"
+                           )
+        
+    def _perform_cleanup(self):
+        directory = self.cleanup_entry.get()
+        if not os.path.isdir(directory):
+            self.cleanup_results.insert("end", "Invalid directory path\n")
+            return
 
-            # to remove older files
+        removed_count = 0
+        saved_space = 0
+
+        self.cleanup_results.delete("1.0", "end")
+        self.cleanup_results.insert("end", "Starting cleanup...\n")
+
+        for root, dirs, files in os.walk(directory, topdown=False):
+            # Remove old files
             if self.old_files_var.get():
                 for file in files:
                     try:
                         file_path = os.path.join(root, file)
-                        if time.time() - os.path.getmtime(file_path) > 30*24*3600:
+                        if time.time() - os.path.getmtime(file_path) > 30 * 24 * 3600:
                             size = os.path.getsize(file_path)
                             os.remove(file_path)
                             removed_count += 1
@@ -327,8 +370,8 @@ class FileManagerApp:
                             self.cleanup_results.insert("end", f"Removed old file: {file_path}\n")
                     except:
                         continue
-                    
-            # to remove empty folders
+
+            # Remove empty folders
             if self.empty_folders_var.get():
                 if not os.listdir(root):
                     try:
@@ -338,11 +381,12 @@ class FileManagerApp:
                     except:
                         continue
 
-        self.cleanup_results.insert("end", 
-                            f"\nCleanup completed:\n"
-                            f"- Removed {removed_count} items\n"
-                            f"Saved {saved_space / (1024*1024):.2f} MB of space\n"
-                           )
+        self.cleanup_results.insert(
+            "end",
+            f"\nCleanup completed:\n"
+            f"- Removed {removed_count} items\n"
+            f"- Saved {saved_space / (1024*1024):.2f} MB of space\n"
+        )
 
     def run(self):
         self.app.mainloop()
