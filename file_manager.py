@@ -392,7 +392,7 @@ class FileManagerApp:
                         self.temp_cleanup_results.insert("end", f"Removed file: {file_path}\n")
                             
                     except Exception as e:
-                        self.temp_cleanup_results.insert("end", f"Failed to remove {file_path}: {str(e)}\n")
+                        continue
 
         self.temp_cleanup_results.insert("end", 
                             f"\nCleanup completed:\n"
