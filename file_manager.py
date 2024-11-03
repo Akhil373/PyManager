@@ -2,6 +2,7 @@ import os
 import shutil
 import time
 import tkinter as tk
+from tkinter import filedialog
 import customtkinter as ctk
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -39,7 +40,11 @@ class FileManagerApp:
         self._setup_cleanup_tab()
         self._setup_temp_cleanup_tab()
 
+# ---------------------SETTING UP TABS--------------------------------------------------------------------------------------------------
 
+# ------------------------------
+# ORGANIZATION TAB
+# ------------------------------
     def _setup_organizer_tab(self):
         # here you enter dir path
         input_frame = ctk.CTkFrame(self.tab_organizer)
@@ -48,6 +53,8 @@ class FileManagerApp:
         ctk.CTkLabel(input_frame, text="Enter directory path:").pack(side="left", padx=5);
         self.dir_entry = ctk.CTkEntry(input_frame, width=400)
         self.dir_entry.pack(side="left", padx=5)
+
+        ctk.CTkButton(input_frame, text="Browse", command=self._browse_dir_for_organizer).pack(side="left", padx=5)
 
         # buttons
         btn_frame = ctk.CTkFrame(self.tab_organizer)
@@ -66,6 +73,9 @@ class FileManagerApp:
         self.org_log.pack(fill="both", expand=True, padx=5, pady=5)
 
 
+# ------------------------------
+# MONITORING TAB
+# ------------------------------
     def _setup_monitor_tab(self):
         control_frame = ctk.CTkFrame(self.tab_monitor)
         control_frame.pack(fill="x", padx=10, pady=5)
@@ -73,6 +83,8 @@ class FileManagerApp:
         ctk.CTkLabel(control_frame, text="Directory to monitor:").pack(side="left", padx=5)
         self.monitor_entry = ctk.CTkEntry(control_frame, width=400)
         self.monitor_entry.pack(side="left", padx=5)
+
+        ctk.CTkButton(control_frame, text="Browse", command=self._browse_dir_for_monitor).pack(side="left", padx=5)
 
         self.monitor_btn = ctk.CTkButton(control_frame, text="Start Monitoring", command=self._toggle_monitoring)
         self.monitor_btn.pack(side="left", padx=5)
@@ -85,6 +97,9 @@ class FileManagerApp:
         self.monitor_log.pack(fill="both", expand=True, padx=5, pady=5)
 
 
+# ------------------------------
+# ANALYSIS TAB
+# ------------------------------
     def _setup_analysis_tab(self):
         control_frame = ctk.CTkFrame(self.tab_analysis)
         control_frame.pack(fill="x", padx=10, pady=5)
@@ -99,6 +114,30 @@ class FileManagerApp:
         self.analysis_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
 
+# ------------------------------
+# TEMP CLEANUP TAB
+# ------------------------------
+    def _setup_temp_cleanup_tab(self):
+        options_frame = ctk.CTkFrame(self.tab_temp_cleanup)
+        options_frame.pack(fill="x", padx=10, pady=5)
+
+        ctk.CTkLabel(options_frame, text="Enter username on the pc:").pack(side="left", padx=5)
+        self.temp_cleanup_entry = ctk.CTkEntry(options_frame, width=400)
+        self.temp_cleanup_entry.pack(side="left", padx=5)
+
+        # all cleanup options
+        self.temp_cleanup_options = ctk.CTkFrame(self.tab_temp_cleanup)
+        self.temp_cleanup_options.pack(fill="x", padx=10, pady=5)
+
+        ctk.CTkButton(self.temp_cleanup_options, text="Start cleanup process", command=self._perform_temp_cleanup).pack(pady=10)
+
+        self.temp_cleanup_results = ctk.CTkTextbox(self.tab_temp_cleanup, height=200)
+        self.temp_cleanup_results.pack(fill="both", expand=True, padx=10, pady=5)
+
+
+# ------------------------------
+# FOLDER CLEANUP TAB
+# ------------------------------
     def _setup_cleanup_tab(self):
         options_frame = ctk.CTkFrame(self.tab_cleanup)
         options_frame.pack(fill="x", padx=10, pady=5)
@@ -106,6 +145,8 @@ class FileManagerApp:
         ctk.CTkLabel(options_frame, text="Directory to clean:").pack(side="left", padx=5)
         self.cleanup_entry = ctk.CTkEntry(options_frame, width=400)
         self.cleanup_entry.pack(side="left", padx=5)
+
+        ctk.CTkButton(options_frame, text="Browse", command=self._browse_dir_for_cleanup).pack(side="left", padx=5)
 
         # all cleanup options
         self.cleanup_options = ctk.CTkFrame(self.tab_cleanup)
@@ -124,23 +165,17 @@ class FileManagerApp:
         self.cleanup_results.pack(fill="both", expand=True, padx=10, pady=5)
 
 
-    def _setup_temp_cleanup_tab(self):
-        options_frame = ctk.CTkFrame(self.tab_temp_cleanup)
-        options_frame.pack(fill="x", padx=10, pady=5)
+# ---------------------FUNCTIONS TO PERFORM ACTIONS-------------------------------------------------------------------------------------
 
-        ctk.CTkLabel(options_frame, text="Enter username on the pc:").pack(side="left", padx=5)
-        self.temp_cleanup_entry = ctk.CTkEntry(options_frame, width=400)
-        self.temp_cleanup_entry.pack(side="left", padx=5)
 
-        # all cleanup options
-        self.temp_cleanup_options = ctk.CTkFrame(self.tab_temp_cleanup)
-        self.temp_cleanup_options.pack(fill="x", padx=10, pady=5)
-
-        ctk.CTkButton(self.temp_cleanup_options, text="Start cleanup process", command=self._perform_temp_cleanup).pack(pady=10)
-
-        self.temp_cleanup_results = ctk.CTkTextbox(self.tab_temp_cleanup, height=200)
-        self.temp_cleanup_results.pack(fill="both", expand=True, padx=10, pady=5)
-
+# ------------------------------
+# ORGANIZATION TAB FUNCTIONS
+# ------------------------------
+    def _browse_dir_for_organizer(self):
+        directory = filedialog.askdirectory()
+        if directory:
+            self.dir_entry.delete(0, tk.END)
+            self.dir_entry.insert(0, directory)
 
     def _organize_files(self):
         self.org_log.insert(tk.END, "Sorting...\n")
@@ -207,19 +242,16 @@ class FileManagerApp:
         self.app.update_idletasks()
 
 
-    import os
-
     def _remove_duplicates(self):
         directory = os.path.abspath(os.path.normpath(self.dir_entry.get().strip()))
 
         self.org_log.insert("end", f"Removing duplicates in {directory}...\n")
         try:
-            current = directory  # Directly use the directory
+            current = directory
             print(f"Current Directory: {current}")
 
             file_dict = {}
 
-            # Recursive file listing
             for root, dirs, files in os.walk(current):
                 for file in files:
                     full_path = os.path.join(root, file)
@@ -238,9 +270,18 @@ class FileManagerApp:
                         self.org_log.insert(tk.END, f"Deleted duplicate file: {duplicate_file}\n")
 
         except Exception as e:
-            # Handle exceptions gracefully
             print(f"An error occurred: {e}")
             self.org_log.insert(tk.END, f"An error occurred: {e}\n")
+
+
+# ------------------------------
+# MONITORING TAB FUNCTIONS
+# ------------------------------
+    def _browse_dir_for_monitor(self):
+        directory = filedialog.askdirectory()
+        if directory:
+            self.monitor_entry.delete(0, tk.END)
+            self.monitor_entry.insert(0, directory)
     
     def _toggle_monitoring(self):
         if self.monitor_btn.cget("text") == "Start Monitoring":
@@ -254,7 +295,6 @@ class FileManagerApp:
             self.monitor_log.insert("end", "Invalid directory path\n")
             return
 
-        # Define handler for file system events
         class Handler(FileSystemEventHandler):
             def __init__(self, app):
                 self.app = app
@@ -266,7 +306,6 @@ class FileManagerApp:
                 self.app.monitor_log.insert("end", f"{timestamp} - {event.event_type}: {event.src_path}\n")
                 self.app.monitor_log.see("end")
 
-        # Set up observer and handler
         self.observer = Observer()
         self.observer.schedule(Handler(self), dir, recursive=False)
         self.observer.start()
@@ -280,7 +319,10 @@ class FileManagerApp:
         self.monitor_btn.configure(text="Start Monitoring")
         self.monitor_log.insert("end", f"Stopped monitoring {self.monitor_entry.get()}\n")
 
-    
+
+# ------------------------------
+# ANALYSIS TAB FUNCTIONS
+# ------------------------------
     def _analyze_drive(self):
         directory = os.path.abspath(os.path.normpath(self.analysis_entry.get().strip()))
 
@@ -313,6 +355,9 @@ class FileManagerApp:
             status_label.configure(text=f"Error: {e}", text_color="red")
 
 
+# ------------------------------
+# TEMP CLEANUP TAB FUNCTIONS
+# ------------------------------
     def _perform_temp_cleanup(self):
         username = self.temp_cleanup_entry.get()
         if not username:
@@ -355,6 +400,16 @@ class FileManagerApp:
                             f"Saved {saved_space / (1024*1024):.2f} MB of space\n"
                            )
         
+
+# ------------------------------
+# FOLDER CLEANUP TAB FUNCTIONS
+# ------------------------------
+    def _browse_dir_for_cleanup(self):
+        directory = filedialog.askdirectory()
+        if directory:
+            self.cleanup_entry.delete(0, tk.END)
+            self.cleanup_entry.insert(0, directory)
+
     def _perform_cleanup(self):
         directory = os.path.abspath(os.path.normpath(self.cleanup_entry.get().strip()))
         removed_count = 0
