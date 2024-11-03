@@ -1,6 +1,7 @@
 # PyManager
 
 This project utilizes the following Python libraries:
+
 *Standard Libraries*
 - os
 - shutil
