@@ -182,32 +182,45 @@ class FileManagerApp:
         self.app.update_idletasks()
         self.org_log.delete("1.0", tk.END)
         self.org_log.configure(state=tk.NORMAL)
-    
+
         directory = os.path.abspath(os.path.normpath(self.dir_entry.get().strip()))
         try:
             if not os.path.isdir(directory):
                 raise FileNotFoundError("Invalid directory path. Please try again.")
-        
+            
             os.chdir(directory)
             current_dir = os.getcwd()
             self.org_log.insert(tk.END, f"Current Directory: {current_dir}\n")
-
+            
             file_types = {
                 "Images": ["jpeg", "png", "jpg", "gif"],
                 "Text": ["doc", "txt", "pdf", "xlsx", "docx", "xls", "rtf", "pptx"],
                 "Videos": ["mp4", "mkv"],
-                "Sounds": ["mp3", "wav", "m4a"],
+                "Sounds": ["mp3", "wav", "m4a", "flac"],
                 "Applications": ["exe", "lnk", "sh", "app"],
                 "Codes": ["c", "py", "java", "cpp", "js", "html", "css", "php"],
             }
 
+            # Create all necessary directories first
+            for dir_name in file_types.keys():
+                dir_path = os.path.join(current_dir, dir_name)
+                if not os.path.exists(dir_path):
+                    os.makedirs(dir_path)
+                    self.org_log.insert(tk.END, f"Created directory: {dir_name}\n")
+
+            # Create Others directory
+            others_dir = os.path.join(current_dir, "Others")
+            if not os.path.exists(others_dir):
+                os.makedirs(others_dir)
+                self.org_log.insert(tk.END, "Created directory: Others\n")
+
             files = os.listdir(current_dir)
-        
+            
             for file in files:
                 if os.path.isfile(file):
                     file_ext = file.split(".")[-1].lower() if '.' in file else ''
                     dest_dir = None
-
+                    
                     for dir_name, extensions in file_types.items():
                         if file_ext in extensions:
                             dest_dir = os.path.join(current_dir, dir_name)
@@ -216,23 +229,21 @@ class FileManagerApp:
                         dest_dir = os.path.join(current_dir, "Others")
                     
                     dest_path = os.path.join(dest_dir, file)
-                
+                    
                     if os.path.exists(dest_path):
                         base, extension = os.path.splitext(file)
                         counter = 1
                         new_file = f"{base}_{counter}{extension}"
                         dest_path = os.path.join(dest_dir, new_file)
-
                         while os.path.exists(dest_path):
                             counter += 1
                             new_file = f"{base}_{counter}{extension}"
                             dest_path = os.path.join(dest_dir, new_file)
-                
-                    shutil.move(file, dest_dir)
-                    self.org_log.insert(tk.END, f"Moved '{file}' to '{dest_dir}'\n")
-
+                    
+                    shutil.move(file, dest_path)
+                    self.org_log.insert(tk.END, f"Moved '{file}' to '{os.path.basename(dest_dir)}'\n")
+                    
             self.org_log.insert(tk.END, "Sorting Completed...\n")
-
         except FileNotFoundError as e:
             self.org_log.insert(tk.END, f"Error: {e}\n")
         except Exception as e:
