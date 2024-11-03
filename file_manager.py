@@ -128,18 +128,18 @@ class FileManagerApp:
         options_frame = ctk.CTkFrame(self.tab_temp_cleanup)
         options_frame.pack(fill="x", padx=10, pady=5)
 
-        ctk.CTkLabel(options_frame, text="Directory to clean:").pack(side="left", padx=5)
-        self.cleanup_entry = ctk.CTkEntry(options_frame, width=400)
-        self.cleanup_entry.pack(side="left", padx=5)
+        ctk.CTkLabel(options_frame, text="Enter username on the pc:").pack(side="left", padx=5)
+        self.temp_cleanup_entry = ctk.CTkEntry(options_frame, width=400)
+        self.temp_cleanup_entry.pack(side="left", padx=5)
 
         # all cleanup options
-        self.cleanup_options = ctk.CTkFrame(self.tab_temp_cleanup)
-        self.cleanup_options.pack(fill="x", padx=10, pady=5)
+        self.temp_cleanup_options = ctk.CTkFrame(self.tab_temp_cleanup)
+        self.temp_cleanup_options.pack(fill="x", padx=10, pady=5)
 
-        ctk.CTkButton(self.cleanup_options, text="Start cleanup process", command=self._perform_temp_cleanup).pack(pady=10)
+        ctk.CTkButton(self.temp_cleanup_options, text="Start cleanup process", command=self._perform_temp_cleanup).pack(pady=10)
 
-        self.cleanup_results = ctk.CTkTextbox(self.tab_temp_cleanup, height=200)
-        self.cleanup_results.pack(fill="both", expand=True, padx=10, pady=5)
+        self.temp_cleanup_results = ctk.CTkTextbox(self.tab_temp_cleanup, height=200)
+        self.temp_cleanup_results.pack(fill="both", expand=True, padx=10, pady=5)
 
 
     def _organize_files(self):
@@ -148,7 +148,7 @@ class FileManagerApp:
         self.org_log.delete("1.0", tk.END)
         self.org_log.configure(state=tk.NORMAL)
     
-        directory = self.dir_entry.get()
+        directory = os.path.abspath(os.path.normpath(self.dir_entry.get().strip()))
         try:
             if not os.path.isdir(directory):
                 raise FileNotFoundError("Invalid directory path. Please try again.")
@@ -179,10 +179,19 @@ class FileManagerApp:
                             break
                     else:
                         dest_dir = os.path.join(current_dir, "Others")
+                    
+                    dest_path = os.path.join(dest_dir, file)
                 
-                    if not os.path.exists(dest_dir):
-                        os.makedirs(dest_dir)
-                        self.org_log.insert(tk.END, f"Created directory: {dest_dir}\n")
+                    if os.path.exists(dest_path):
+                        base, extension = os.path.splitext(file)
+                        counter = 1
+                        new_file = f"{base}_{counter}{extension}"
+                        dest_path = os.path.join(dest_dir, new_file)
+
+                        while os.path.exists(dest_path):
+                            counter += 1
+                            new_file = f"{base}_{counter}{extension}"
+                            dest_path = os.path.join(dest_dir, new_file)
                 
                     shutil.move(file, dest_dir)
                     self.org_log.insert(tk.END, f"Moved '{file}' to '{dest_dir}'\n")
@@ -198,37 +207,40 @@ class FileManagerApp:
         self.app.update_idletasks()
 
 
+    import os
+
     def _remove_duplicates(self):
-        directory = self.dir_entry.get()
+        directory = os.path.abspath(os.path.normpath(self.dir_entry.get().strip()))
 
         self.org_log.insert("end", f"Removing duplicates in {directory}...\n")
         try:
-            os.chdir(directory)
-            current = os.getcwd()
+            current = directory  # Directly use the directory
             print(f"Current Directory: {current}")
 
-            files = os.listdir(current)
             file_dict = {}
 
-            for file in files:
-                if os.path.isfile(os.path.join(current, file)):
-                    file_size = os.path.getsize(os.path.join(current, file))
+            # Recursive file listing
+            for root, dirs, files in os.walk(current):
+                for file in files:
+                    full_path = os.path.join(root, file)
+                    file_size = os.path.getsize(full_path)
                     if file_size in file_dict:
-                        file_dict[file_size].append(file)
+                        file_dict[file_size].append(full_path)
                     else:
-                        file_dict[file_size] = [file]
+                        file_dict[file_size] = [full_path]
 
             for file_size, file_list in file_dict.items():
                 if len(file_list) > 1:
                     original_file = file_list[0]
                     for duplicate_file in file_list[1:]:
-                        os.remove(os.path.join(current, duplicate_file))
+                        os.remove(duplicate_file)
                         print(f"Deleted duplicate file: {duplicate_file}")
                         self.org_log.insert(tk.END, f"Deleted duplicate file: {duplicate_file}\n")
 
         except Exception as e:
-            self.org_log.insert(text=f"Error: {e}")
-            print(e)
+            # Handle exceptions gracefully
+            print(f"An error occurred: {e}")
+            self.org_log.insert(tk.END, f"An error occurred: {e}\n")
     
     def _toggle_monitoring(self):
         if self.monitor_btn.cget("text") == "Start Monitoring":
@@ -270,7 +282,7 @@ class FileManagerApp:
 
     
     def _analyze_drive(self):
-        directory = self.analysis_entry.get()
+        directory = os.path.abspath(os.path.normpath(self.analysis_entry.get().strip()))
 
         status_label = ctk.CTkLabel(self.analysis_frame, text="")
         status_label.pack(pady=5)
@@ -302,9 +314,9 @@ class FileManagerApp:
 
 
     def _perform_temp_cleanup(self):
-        username = self.cleanup_entry.get()
+        username = self.temp_cleanup_entry.get()
         if not username:
-            self.cleanup_results.insert("end", "Please enter a valid username\n")
+            self.temp_cleanup_results.insert("end", "Please enter a valid username\n")
             return
 
         # Define the temp directories
@@ -315,78 +327,86 @@ class FileManagerApp:
 
         removed_count = 0
         saved_space = 0
-        self.cleanup_results.delete("1.0", "end")
-        self.cleanup_results.insert("end", "Starting cleanup...\n")
+        self.temp_cleanup_results.delete("1.0", "end")
+        self.temp_cleanup_results.insert("end", "Starting cleanup...\n")
 
         for temp_dir in temp_dirs:
             if not os.path.isdir(temp_dir):
-                self.cleanup_results.insert("end", f"Invalid directory: {temp_dir}\n")
+                self.temp_cleanup_results.insert("end", f"Invalid directory: {temp_dir}\n")
                 continue
     
             # Remove ALL temp files
-            if self.temp_files_var.get():
-                for root, dirs, files in os.walk(temp_dir):  
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        try:
-                            file_size = os.path.getsize(file_path)
-                            os.remove(file_path)
-                            removed_count += 1
-                            saved_space += file_size
-                            self.cleanup_results.insert("end", f"Removed file: {file_path}\n")
+            for root, dirs, files in os.walk(temp_dir):  
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    try:
+                        file_size = os.path.getsize(file_path)
+                        os.remove(file_path)
+                        removed_count += 1
+                        saved_space += file_size
+                        self.temp_cleanup_results.insert("end", f"Removed file: {file_path}\n")
                             
-                        except Exception as e:
-                            self.cleanup_results.insert("end", f"Failed to remove {file_path}: {str(e)}\n")
+                    except Exception as e:
+                        self.temp_cleanup_results.insert("end", f"Failed to remove {file_path}: {str(e)}\n")
 
-        self.cleanup_results.insert("end", 
+        self.temp_cleanup_results.insert("end", 
                             f"\nCleanup completed:\n"
                             f"- Removed {removed_count} items\n"
                             f"Saved {saved_space / (1024*1024):.2f} MB of space\n"
                            )
         
     def _perform_cleanup(self):
-        directory = self.cleanup_entry.get()
-        if not os.path.isdir(directory):
-            self.cleanup_results.insert("end", "Invalid directory path\n")
-            return
-
+        directory = os.path.abspath(os.path.normpath(self.cleanup_entry.get().strip()))
         removed_count = 0
         saved_space = 0
-
-        self.cleanup_results.delete("1.0", "end")
-        self.cleanup_results.insert("end", "Starting cleanup...\n")
-
-        for root, dirs, files in os.walk(directory, topdown=False):
-            # Remove old files
+        try:
+            print(f"Directory path: {directory}")
+            
+            if not os.path.isdir(directory):
+                raise FileNotFoundError("Invalid directory path. Please try again.")
+            
+            self.cleanup_results.delete("1.0", "end")
+            self.cleanup_results.insert("end", "Starting cleanup...\n")
+            
+            # First pass: Remove old files
             if self.old_files_var.get():
-                for file in files:
-                    try:
-                        file_path = os.path.join(root, file)
-                        if time.time() - os.path.getmtime(file_path) > 30 * 24 * 3600:
-                            size = os.path.getsize(file_path)
-                            os.remove(file_path)
-                            removed_count += 1
-                            saved_space += size
-                            self.cleanup_results.insert("end", f"Removed old file: {file_path}\n")
-                    except:
-                        continue
-
-            # Remove empty folders
+                for root, dirs, files in os.walk(directory, topdown=False):
+                    for file in files:
+                        try:
+                            file_path = os.path.join(root, file)
+                            if time.time() - os.path.getmtime(file_path) > 30 * 24 * 3600:
+                                size = os.path.getsize(file_path)
+                                os.remove(file_path)
+                                removed_count += 1
+                                saved_space += size
+                                self.cleanup_results.insert("end", f"Removed old file: {file_path}\n")
+                        except Exception as e:
+                            continue
+            
+            # Second pass: Remove empty folders
             if self.empty_folders_var.get():
-                if not os.listdir(root):
+                for root, dirs, files in os.walk(directory, topdown=False):
                     try:
-                        os.rmdir(root)
-                        removed_count += 1
-                        self.cleanup_results.insert("end", f"Removed empty folder: {root}\n")
-                    except:
+                        if not os.listdir(root):
+                            os.rmdir(root)
+                            removed_count += 1
+                            self.cleanup_results.insert("end", f"Removed empty folder: {root}\n")
+                            self.cleanup_results.see("end")
+                            self.cleanup_results.update()
+                    except Exception as e:
                         continue
 
-        self.cleanup_results.insert(
-            "end",
-            f"\nCleanup completed:\n"
-            f"- Removed {removed_count} items\n"
-            f"- Saved {saved_space / (1024*1024):.2f} MB of space\n"
-        )
+        except FileNotFoundError as e:
+            self.cleanup_results.insert("end", f"Error: {e}\n")
+        except Exception as e:
+            self.cleanup_results.insert("end", f"Error: {e}\n")
+        finally:
+            self.cleanup_results.insert(
+                "end",
+                f"\nCleanup completed:\n"
+                f"- Removed {removed_count} items\n"
+                f"- Saved {saved_space / (1024*1024):.2f} MB of space\n"
+            )
 
     def run(self):
         self.app.mainloop()
