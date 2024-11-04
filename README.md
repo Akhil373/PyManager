@@ -1,6 +1,7 @@
 # PyManager
 
 This project utilizes the following Python libraries:
+
 *Standard Libraries*
 - os
 - shutil
@@ -23,8 +24,12 @@ This project utilizes the following Python libraries:
 5. Folder Cleanup: Customizable cleanup of selected folders, removing old files, empty directories etc.
 
 **Screenshots**
-- ![File Organizer](./__screenshots__/1.png)
-- ![Folder Monitoring](./__screenshots__/2.png)
-- ![Disk Analysis](./__screenshots__/3.png)
-- ![Temp cleanup](./__screenshots__/4.png)
-- ![Dir Cleanup](./__screenshots__/5.png)
+![File Organizer](./__screenshots__/1.png)
+
+![Folder Monitoring](./__screenshots__/2.png)
+
+![Disk Analysis](./__screenshots__/3.png)
+
+![Temp cleanup](./__screenshots__/4.png)
+
+![Dir Cleanup](./__screenshots__/5.png)
