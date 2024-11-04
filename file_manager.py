@@ -154,10 +154,20 @@ class FileManagerApp:
 
         self.empty_folders_var = tk.BooleanVar(value=True)
         self.old_files_var = tk.BooleanVar(value=True)
+        self.days_threshold = ctk.IntVar(value=30)
 
         ctk.CTkCheckBox(self.cleanup_options, text="Remove empty folders", variable=self.empty_folders_var).pack(anchor="w")
 
-        ctk.CTkCheckBox(self.cleanup_options, text="Remove files older than 30 days", variable=self.old_files_var).pack(anchor="w")
+        age_frame = ctk.CTkFrame(self.cleanup_options)
+        age_frame.pack(anchor="w", fill="x", pady=2)
+        
+        ctk.CTkCheckBox(age_frame, 
+                       text="Remove files older than", 
+                       variable=self.old_files_var).pack(side="left", padx=5)
+        
+        ctk.CTkEntry(age_frame, width=50,textvariable=self.days_threshold).pack(side="left", padx=5)
+        
+        ctk.CTkLabel(age_frame, text="days").pack(side="left", padx=5)
 
         ctk.CTkButton(self.cleanup_options, text="Start cleanup process", command=self._perform_cleanup).pack(pady=10)
 
@@ -431,6 +441,14 @@ class FileManagerApp:
             if not os.path.isdir(directory):
                 raise FileNotFoundError("Invalid directory path. Please try again.")
             
+            try:
+                days_old = int(self.days_threshold.get())
+            except (tk.TclError, ValueError):
+                self.cleanup_results.insert("end", "Error: Please enter a valid number for days threshold.\n")
+                return
+            
+            threshold_time = time.time() - (days_old * 24 * 3600)
+            
             self.cleanup_results.delete("1.0", "end")
             self.cleanup_results.insert("end", "Starting cleanup...\n")
             
@@ -440,7 +458,7 @@ class FileManagerApp:
                     for file in files:
                         try:
                             file_path = os.path.join(root, file)
-                            if time.time() - os.path.getmtime(file_path) > 30 * 24 * 3600:
+                            if os.path.getmtime(file_path) < threshold_time:
                                 size = os.path.getsize(file_path)
                                 os.remove(file_path)
                                 removed_count += 1
