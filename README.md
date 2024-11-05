@@ -15,6 +15,7 @@ This project utilizes the following Python libraries:
 - watchdog
 - psutil
 
+
 **Features**
 
 1. File Organizer: To organizer your files within a directory into categorized folders (e.g., Images, Videos, Documents).
@@ -23,7 +24,14 @@ This project utilizes the following Python libraries:
 4. Temporary Files Cleanup: Automatically deletes temporary files from Windows Temp folders to free up disk space.
 5. Folder Cleanup: Customizable cleanup of selected folders, removing old files, empty directories etc.
 
+
+**Installation**
+
+Download the executable file from [here](https://github.com/Akhil373/PyManager/releases).
+
+
 **Screenshots**
+
 ![File Organizer](./__screenshots__/1.png)
 
 ![Folder Monitoring](./__screenshots__/2.png)
