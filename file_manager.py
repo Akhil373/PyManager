@@ -203,12 +203,12 @@ class FileManagerApp:
             self.org_log.insert(tk.END, f"Current Directory: {current_dir}\n")
             
             file_types = {
-                "Images": ["jpeg", "png", "jpg", "gif"],
-                "Text": ["doc", "txt", "pdf", "xlsx", "docx", "xls", "rtf", "pptx"],
-                "Videos": ["mp4", "mkv"],
-                "Sounds": ["mp3", "wav", "m4a", "flac"],
-                "Applications": ["exe", "lnk", "sh", "app"],
-                "Codes": ["c", "py", "java", "cpp", "js", "html", "css", "php"],
+                "Images": ["jpeg", "png", "jpg", "gif", "bmp", "tiff", "ico", "webp", "svg"],
+                "Text": ["doc", "txt", "pdf", "xlsx", "docx", "xls", "rtf", "pptx", "docm", "dotm", "dotx", "docb", "docx~", "docm~", "dotx~", "dotm~", "docb~"],
+                "Videos": ["mp4", "mkv", "mov", "wmv", "avi", "mpg", "mpeg", "3gp", "3g2", "m4v", "webm", "flv", "swf", "m3u8", "m3u", "m3u~"],
+                "Sounds": ["mp3", "wav", "m4a", "flac", "aac", "m4b", "m4p", "m4r", "m4v", "mp2", "mpa", "mpe", "mpp", "mpv", "m4a~", "m4b~", "m4p~", "m4r~", "m4v~", "mp2~", "mpa~", "mpe~", "mpp~", "mpv~"],
+                "Applications": ["exe", "lnk", "sh", "app", "msi", "bat", "cmd", "ps1", "appinstaller"],
+                "Codes": ["c", "py", "java", "cpp", "js", "html", "css", "php", "xml", "json", "yaml", "yml", "ini", "cfg", "conf", "config", "log", "xml~", "json~", "yaml~", "yml~", "ini~", "cfg~", "conf~", "config~", "log~"],
             }
 
             # Create all necessary directories first
